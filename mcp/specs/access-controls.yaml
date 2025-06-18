@@ -1,0 +1,171 @@
+asyncapi: "3.0.0"
+x-qlik-stability: stable
+x-qlik-visibility: private
+info:
+  title: Access-controls
+  version: 1.0.0
+  description: Access-controls handles user and services access rights.
+  x-qlik-guidelines-version: 1.0.0
+tags:
+  - name: caches
+    description: Cache is the internal temporary quick fetch storage.
+channels:
+  cacheChannel:
+    address: 'system-events.access'
+    messages:
+      userCacheDeleted:
+        $ref: "#/components/messages/userCache"
+      globalCacheDeleted:
+        $ref: "#/components/messages/globalCache"
+
+operations:
+  publishEvents:
+    action: send
+    channel:
+      $ref: "#/channels/cacheChannel"
+    messages:
+      - $ref: "#/channels/cacheChannel/messages/userCacheDeleted"
+      - $ref: "#/channels/cacheChannel/messages/globalCacheDeleted"
+
+components:
+  messages:
+    userCache:
+      title: User cache updated (invalidated)
+      name: com.qlik.v1.access.deleted
+      description: The user portion of the cache was updated (invalidated)
+      payload:
+        type: object
+        required:
+          - specversion
+          - source
+          - type
+          - id
+          - time
+          - datacontenttype
+          - data
+        properties:
+          specversion:
+            type: string
+            const: "1.0"
+            description: The version of the CloudEvents specification which the event uses.
+          source:
+            type: string
+            default: "com.qlik/access-controls"
+            description: Identifies the context in which an event happened.
+          type:
+            type: string
+            default: com.qlik.v1.access.deleted
+            description: Describes the type of event related to the originating occurrence.
+          id:
+            type: string
+            description: Identifies the event.
+            example: id123
+          time:
+            type: string
+            format: date-time
+            example: "2018-10-30T07:06:22Z"
+            description: Timestamp of when the occurrence happened. Must adhere to RFC 3339.
+          datacontenttype:
+            type: string
+            const: "application/json"
+            description: Content type of the data value. Must adhere to RFC 2046 format.
+          data:
+            allOf:
+              - $ref: "#/components/schemas/user"
+              - example:
+                  tenantid: "12345678-1234-5678-1234-567812345678"
+                  ownerid: "VZhiEfgW2bLd7HgR-jjzAh6VnicipweT"
+          userid:
+            type: string
+            example: VZhiEfgW2bLd7HgR-jjzAh6VnicipweT
+            description: Unique identifier for the user triggering the event.
+          tenantid:
+            type: string
+            example: 12345678-1234-5678-1234-567812345678
+            description: Unique identifier for the tenant related to the event.
+          toplevelresourceid:
+            type: string
+            example: id123
+            description: Unique identifier for the event occurring for invalidating cache
+
+    globalCache:
+      title: Cache updated (invalidated)
+      name: com.qlik.v1.access.deleted
+      description: The entirety of the cache was updated (invalidated)
+      payload:
+        type: object
+        required:
+          - specversion
+          - source
+          - type
+          - id
+          - time
+          - datacontenttype
+          - data
+        properties:
+          specversion:
+            type: string
+            const: "1.0"
+            description: The version of the CloudEvents specification which the event uses.
+          source:
+            type: string
+            default: "com.qlik/access-controls"
+            description: Identifies the context in which an event happened.
+          type:
+            type: string
+            default: com.qlik.v1.access.deleted
+            description: Describes the type of event related to the originating occurrence.
+          id:
+            type: string
+            description: Identifies the event.
+            example: id123
+          time:
+            type: string
+            format: date-time
+            example: "2018-10-30T07:06:22Z"
+            description: Timestamp of when the occurrence happened. Must adhere to RFC 3339.
+          datacontenttype:
+            type: string
+            const: "application/json"
+            description: Content type of the data value. Must adhere to RFC 2046 format.
+          data:
+            allOf:
+              - $ref: "#/components/schemas/policyAdministrations"
+              - example:
+                  version: "1.113"
+          userid:
+            type: string
+            example: VZhiEfgW2bLd7HgR-jjzAh6VnicipweT
+            description: Unique identifier for the user triggering the event.
+          tenantid:
+            type: string
+            example: 12345678-1234-5678-1234-567812345678
+            description: Unique identifier for the tenant related to the event.
+          toplevelresourceid:
+            type: string
+            example: id123
+            description: Unique identifier for the event occurring for invalidating cache
+
+  schemas:
+    user:
+      description: represents the user info
+      type: object
+      properties:
+        tenantid:
+          description: The tenant identifier associated with the cache invalidation
+          type: string
+          format: uuid
+          example: 12345678-1234-5678-1234-567812345678
+        ownerid:
+          description: The user identifier associated with the cache invalidation
+          type: string
+          example: VZhiEfgW2bLd7HgR-jjzAh6VnicipweT
+
+    policyAdministrations:
+      description: represents the configuration of policy administrations
+      type: object
+      properties:
+        version:
+          description: The version of the new configuration of policy administrations
+          type: string
+          example: 1.113

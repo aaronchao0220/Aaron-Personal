@@ -1,0 +1,225 @@
+asyncapi: 3.0.0
+x-qlik-stability: stable
+x-qlik-visibility: private
+info:
+  title: Rate limiter
+  version: 1.4.0
+  description: Rate limiter handles all rate limiting decisions in the platform
+x-qlik-guidelines-ignore:
+- must-define-one-top-level-resource-per-specification
+channels:
+  rateLimit:
+    address: 'system-events.rate-limit'
+    messages:
+      rateLimitExceeded:
+        "$ref": "#/components/messages/ratelimitExceeded"
+operations:
+  publishToRateLimit:
+    action: send
+    channel:
+      $ref: "#/channels/rateLimit"
+    messages:
+      - $ref: "#/channels/rateLimit/messages/rateLimitExceeded"
+components:
+  schemas:
+    cloudEventsContextAttributes:
+      required:
+        - id
+        - source
+        - specversion
+        - type
+      description: CloudEvents Specification JSON Schema
+      type: object
+      properties:
+        id:
+          description: Identifies the event.
+          type: string
+          minLength: 1
+          examples:
+              - "A234-1234-1234"
+        source:
+          description: Identifies the context in which an event happened.
+          type: string
+          format: uri-reference
+          minLength: 1
+          examples:
+              - "com.qlik/my-service"
+        specversion:
+          description: The version of the CloudEvents specification which the event uses.
+          type: string
+          minLength: 1
+          examples:
+              - "1.0"
+        type:
+          description: Describes the type of event related to the originating occurrence.
+          type: string
+          minLength: 1
+          examples:
+              - "com.qlik.v1.app.created"
+        datacontenttype:
+          description: Content type of the data value. Must adhere to RFC 2046 format.
+          type: string
+          minLength: 1
+        time:
+          description: Timestamp of when the occurrence happened. Must adhere to RFC 3339.
+          type: string
+          format: date-time
+          minLength: 1
+    cloudEventsQlikExtensionsAttributes:
+      type: object
+      required:
+      - userid
+      - tenantid
+      properties:
+        tenantid:
+          type: string
+          example: id123
+          description: Unique identifier for the tenant related to the event.
+        userid:
+          type: string
+          example: id123
+          description: Unique identifer for the user related to the event.
+        host:
+          type: string
+          description: Unique identifier for event producer.
+        traceparent:
+          type: string
+          description: Contains a version, trace ID, span ID, and trace options.
+        tracestate:
+          type: string
+          description: A comma-delimited list of key-value pairs.
+        authtype:
+          type: string
+          description: Representing the type of principal that triggered the occurrence.
+        authclaims:
+          type: string
+          description: A JSON string representing claims of the principal that triggered the event.
+    userRequestData:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: id123
+          description: User id of user contributing to the rate limiting decision
+        requests:
+          type: integer
+          example: 25
+          description: Number of requests done in the last sliding window
+    queryParameter:
+      type: object
+      properties:
+        param:
+          type: string
+          example: filter
+          description: Query parameter name
+    requestMatcher:
+      type: object
+      properties:
+        path:
+          type: string
+          example: "/v1/themes"
+          description: Path to be matched
+        method:
+          type: string
+          enum:
+          - GET
+          - HEAD
+          - POST
+          - PUT
+          - DELETE
+          - CONNECT
+          - OPTIONS
+          - TRACE
+          - PATCH
+          description: Method to be matched
+        pathType:
+          type: string
+          enum:
+          - PREFIX
+          - EXACT
+          description: Type of matching for the path. EXACT requires the path to be
+            an exact match, while PREFIX matches in cases where it is a prefix of
+            the path
+        query:
+          type: array
+          items:
+            "$ref": "#/components/schemas/queryParameter"
+          description: Query parameters to be matched
+  messages:
+    ratelimitExceeded:
+      tags:
+      - name: rate-limiter
+      title: Rate limiter exceeded decision created
+      name: com.qlik.v1.rate-limit.exceeded
+      description: A rate limit restriction has been reached
+      payload:
+        type: object
+        allOf:
+        - $ref: "#/components/schemas/cloudEventsContextAttributes"
+        - $ref: "#/components/schemas/cloudEventsQlikExtensionsAttributes"
+        - type: object
+          properties:
+            source:
+              type: string
+              enum:
+              - com.qlik/rate-limiter
+              description: The source of the event.
+            type:
+              type: string
+              default: com.qlik.v1.rate-limit.exceeded
+              description: Unique identifier for the event type.
+            data:
+              type: object
+              required:
+              - id
+              - appliesTo
+              - type
+              - validUntil
+              - enforce
+              properties:
+                id:
+                  type: string
+                  example: id123
+                  description: Unique identifier for the decision
+                type:
+                  type: string
+                  enum:
+                  - rest
+                  description: Type of traffic that should be limited
+                appliesTo:
+                  type: string
+                  enum:
+                  - TENANT
+                  - USER
+                  description: Enum for what the decision applies to
+                validUntil:
+                  type: string
+                  example: '2021-11-10T08:50:00+01:00'
+                  description: How long the decision is valid
+                enforce:
+                  type: boolean
+                  example: true
+                  description: Determines if the rate limit decision should be enforced
+                    or not
+                users:
+                  description: Top offending users related to the decision
+                  type: array
+                  items:
+                    "$ref": "#/components/schemas/userRequestData"
+                tierId:
+                  description: Id of the tier where the limit has been reached
+                  type: string
+                  example: '1'
+                includes:
+                  description: Request matching configurations for the tier. Describes
+                    which requests are included in the exceeded tier
+                  type: array
+                  items:
+                    "$ref": "#/components/schemas/requestMatcher"
+                excludes:
+                  description: Request matching configurations for the tier. Describes
+                    which requests are not to be included in the exceeded tier that
+                    would otherwise be matched by the includes
+                  type: array
+                  items:
+                    "$ref": "#/components/schemas/requestMatcher"
