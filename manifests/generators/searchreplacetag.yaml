@@ -1,0 +1,10 @@
+apiVersion: qlik.com/v1
+kind: SearchReplace
+metadata:
+  name: usage-telemetry-publisher
+target:
+  kind: HelmChart
+path: /
+search: \$\(VERSION\)
+replaceWithGitDescribeTag:
+  default: 0.0.0

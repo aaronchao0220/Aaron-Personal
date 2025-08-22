@@ -1,0 +1,21 @@
+apiVersion: v2
+description: Helm chart for the usage-telemetry-publisher service - This service is responsible for providing access for 3rd party tools to have access to usage telemetry data. It will mask PII and is the mean to publish regional data to a central region use case.
+name: usage-telemetry-publisher
+version: 0.0.0
+sources:
+  - https://github.com/qlik-trial/usage-telemetry-publisher
+keywords:
+  - usage-telemetry-publisher
+dependencies:
+  - name: messaging
+    version: 6.0.239
+    repository: "oci://ghcr.io/qlik-trial/helm"
+    condition: global.component-common-imports,messaging.enabled
+  - name: qlikcommon
+    version: 3.26.2
+    repository: "oci://ghcr.io/qlik-trial/helm"
+    condition: global.component-common-imports
+  - name: solace-pubsubplus-ha
+    version: 1.0.3
+    repository: "oci://ghcr.io/qlik-trial/helm"
+    condition: global.component-common-imports,ciBuild

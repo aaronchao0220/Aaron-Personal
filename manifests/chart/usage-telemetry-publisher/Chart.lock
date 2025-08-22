@@ -1,0 +1,12 @@
+dependencies:
+- name: messaging
+  repository: oci://ghcr.io/qlik-trial/helm
+  version: 6.0.239
+- name: qlikcommon
+  repository: oci://ghcr.io/qlik-trial/helm
+  version: 3.26.2
+- name: solace-pubsubplus-ha
+  repository: oci://ghcr.io/qlik-trial/helm
+  version: 1.0.3
+digest: sha256:7acd502b7c6f580cc7e616587a8a7172e3470c24e5d77cda80c4dc76566dede4
+generated: "2025-07-28T13:14:06.642851243Z"

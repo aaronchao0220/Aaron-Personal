@@ -1,0 +1,115 @@
+## Default values for usage-telemetry-publisher service's helm-chart.
+
+image:
+  ## Default registry where this repository should be pulled from.
+  ## Will be overridden by `global.imageRegistry` if set
+  registry: ghcr.io/qlik-trial
+  ## Component's image name.
+  repository: usage-telemetry-publisher
+  ## image version
+  ## ref: https://github.com/orgs/qlik-trial/packages/container/package/usage-telemetry-publisher
+  tag: 0.0.0
+
+  ## Specify a imagePullPolicy: 'Always' if imageTag is 'latest', else set to 'IfNotPresent'.
+  ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  pullPolicy: IfNotPresent
+  ## Secrets for pulling images from a private docker registry.
+  ##
+  pullSecrets:
+    - name: artifactory-docker-secret
+
+configs:
+  ## define service configs here
+  data:
+    logLevel: "debug"
+    # Ingress auth URL
+    # the file path to the yaml file containing the private key and other auth server settings
+    secretKeyFile: "/run/secrets/qlik.com/usage-telemetry-publisher-keys/service-key.yaml"
+    # the interval at which the secret key file should be re read from disk
+    secretKeyFileRefreshIntervalMilliseconds: 30000
+    region: "local"
+    launchdarklyStreamUri: "http://{{ .Release.Name }}-feature-flags-ld-relay:8080/relay"
+
+keys:
+  request:
+    enabled: false
+  override:
+    kid: xnnDcNsOPcc2h251aIFfBiB4sV1gTBwH72nn3B1kt_s
+    algorithm: "ES384"
+    issuer: "qlik.api.internal/usage-telemetry-publisher"
+    subject: "usage-telemetry-publisher"
+    privateKey: |
+      -----BEGIN EC PRIVATE KEY-----
+      MHcCAQEEIL5H5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5XXXXXXXXXX
+      -----END EC PRIVATE KEY-----
+
+## Service configuration.
+## ref: https://kubernetes.io/docs/user-guide/services/
+##
+service:
+  type: ClusterIP
+  port: 8080
+  ## Metrics configuration
+  ## Prometheus configuration
+  ## The annotations for prometheus scraping are included
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.service.port }}"
+
+# Currently templates a "main" container
+deployment:
+  ## Number of replicas.
+  replicas: 1
+  container:
+    resources:
+      requests:
+        cpu: "60m"
+    volumeMounts:
+      # rate-limiter config volume
+      events-volume:
+        readOnly: true
+        mountPath: /etc/config
+  volumes:
+    configMap:
+      events-volume:
+      ## ConfigMap name
+        configMapName: usage-telemetry-publisher-events-configmap
+        ## Map keys to files
+        items:
+          - key: eventsFile
+            path: events.yaml
+## Configuration for the Messaging chart used in localdev and CI builds
+##
+messaging:
+  ## Set messaging.enabled to true to enable the Messaging chart
+  enabled: false
+ciBuild: false
+
+## Ingress configuration.
+## ref: https://kubernetes.io/docs/user-guide/ingress/
+##
+
+# ## Horizontal pod autoscaler
+hpa:
+  enabled: false
+#   ## Minimum number of replicas
+#   # minReplicas: 1
+#   ## Maximum number of replicas
+#   # maxReplicas: 1
+
+# Included if certs are required to be mounted into the pod
+certs:
+  mountPath: "/etc/ssl/certs"
+
+## True to enable jaeger-tracing
+tracing:
+  enabled: false
+
+### Messaging chart configuration for solace
+solace-pubsubplus-ha:
+  enabled: false
+
+feature-flags-ld-relay:
+  enabled: false
+

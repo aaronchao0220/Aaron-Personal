@@ -1,0 +1,51 @@
+# syntax=docker/dockerfile:experimental
+# builder image
+# use golang:x.x.x-alpine as executable built from golang:x.x.x do not work in alpine:x.x.x
+FROM golang:1.25.0-alpine as builder
+RUN apk add --no-cache bash build-base curl git make openssh-client
+RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+ENV GOPRIVATE github.com/qlik-trial
+RUN git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+
+WORKDIR /src/
+COPY go.mod go.sum Makefile ./
+RUN --mount=type=ssh,required go mod download
+
+COPY cmd ./cmd
+COPY internal ./internal
+
+ARG VERSION
+ARG REVISION
+
+RUN make build
+
+# test image
+# use golang:x.x.x as go test -race does not work in golang:1.17-alpine
+FROM golang:1.25.0-alpine as test
+RUN apk add --no-cache bash build-base curl git make openssh-client
+RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+ENV GOPRIVATE github.com/qlik-trial
+RUN git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+WORKDIR /src/
+COPY go.mod go.sum ./
+RUN --mount=type=ssh,required go mod download
+COPY . .
+
+# production image
+FROM alpine:3.22.1 as production
+RUN apk --update --no-cache upgrade && \
+	apk add --no-cache ca-certificates
+ARG CREATED
+ARG VERSION
+ARG REVISION
+LABEL org.opencontainers.image.created=$CREATED
+LABEL org.opencontainers.image.url="https://github.com/qlik-trial/usage-telemetry-publisher/pkgs/container/usage-telemetry-publisher"
+LABEL org.opencontainers.image.source="https://github.com/qlik-trial/usage-telemetry-publisher"
+LABEL org.opencontainers.image.version=$VERSION
+LABEL org.opencontainers.image.revision=$REVISION
+EXPOSE 8080
+HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
+	CMD wget -q -O - http://localhost:8080/health || exit 1
+COPY --from=builder /src/usage-telemetry-publisher /
+USER 64000:64000
+ENTRYPOINT ["/usage-telemetry-publisher"]

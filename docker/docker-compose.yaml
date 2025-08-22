@@ -1,0 +1,115 @@
+services:
+  usage-telemetry-publisher:
+    hostname: usage-telemetry-publisher
+    image: qlik/usage-telemetry-publisher:latest
+    container_name: usage-telemetry-publisher
+    environment:
+      - OTLP_AGENT_HOST=otelcol
+      - OTLP_AGENT_PORT=4317
+      - AUTH_ENABLED=false
+      - SOLACE_MESSAGE_VPN=default
+      - SOLACE_URI=tcp://solace:55555
+      - LAUNCHDARKLY_STREAM_URI=http://ldRelay:8080/relay
+      - LAUNCHDARKLY_ENABLED=true
+      - SOLACE_CHANNELS=ui-events.analytics
+      - MESSAGING_ENABLED=true
+      - EVENTS_FILE_PATH=/etc/config/test/events.yaml
+      - LAUNCHDARKLY_SDK_KEY=key
+      - FEATURE_FLAGS_ENABLED=true
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./data/secrets/:/run/secrets/qlik.com/usage-telemetry-publisher/"
+      - ../test/data/events.yaml:/etc/config/test/events.yaml
+    depends_on:
+      - server-mocks
+      - ldRelay
+      - solace
+      - wait
+  solace:
+    image: solace/solace-pubsub-standard:latest
+    hostname: solace
+    container_name: solace
+    shm_size: 2g
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 1
+    ports:
+      - "8008:8008"
+      - "8081:8080"
+      - "55554:55555"
+    environment:
+      - username_admin_globalaccesslevel=admin
+      - username_admin_password=admin
+      - system_scaling_maxconnectioncount=100
+  test:
+    image: qlik/usage-telemetry-publisher-test:latest
+    command:
+      - go
+      - test
+      - -count=1
+      - -v
+      - ./test/component
+    environment:
+      - USAGE_TELEMETRY_PUBLISHER_ADDRESS=http://usage-telemetry-publisher:8080
+      - OTLP_AGENT_HOST=otelcol
+      - OTLP_AGENT_PORT=4317
+      - SOLACE_MESSAGE_VPN=default
+      - SOLACE_URI=tcp://solace:55555
+      - MESSAGING_SUBSCRIPTIONS=ui-events.analytics
+    volumes:
+      - "./data/secrets/:/run/secrets/qlik.com/usage-telemetry-publisher/"
+    depends_on:
+      - usage-telemetry-publisher
+      - solace
+      - ldRelay
+
+  test_e2e:
+    image: qlik/usage-telemetry-publisher-test:latest
+    command:
+      - go
+      - test
+      - -count=1
+      - -v
+      - ./test/e2e
+    environment:
+      - USAGE_TELEMETRY_PUBLISHER_ADDRESS=http://usage-telemetry-publisher:8080
+      - OTLP_AGENT_HOST=otelcol
+      - OTLP_AGENT_PORT=4317
+      - SOLACE_MESSAGE_VPN=default
+      - SOLACE_URI=tcp://solace:55555
+    volumes:
+      - "./data/secrets/:/run/secrets/qlik.com/usage-telemetry-publisher/"
+    depends_on:
+      - usage-telemetry-publisher
+      - solace
+      - ldRelay
+      - wait
+  ldRelay:
+    image: ghcr.io/qlik-trial/feature-flags-ld-relay:latest
+    container_name: ldRelay
+    environment:
+      - LD_TOKEN=key
+      - RELAY_OFFLINE_MODE=true
+      - RELAY_FLAGS_FILE_PATH=/tmp/flags.tar.gz
+      - CUSTOM_FLAGS_FILE=/data/custom-flags.json
+    ports:
+      - "8082:8080" # http://localhost:8082/relay is the LD stream URI
+    volumes:
+      - ./data/launchDarkly/custom-flags.json:/data/custom-flags.json
+    restart: always
+
+  server-mocks:
+    image: ghcr.io/qlik-trial/go-server-mocks:0.8.0
+    container_name: server-mocks
+    ports:
+      - "8000:8080"
+    volumes:
+      - ./data/goServerMocks/defaults.json:/server/defaults.json
+
+  wait:
+    image: willwill/wait-for-it:latest
+    depends_on:
+      - solace
+    command: solace:8080 --strict --timeout=30 -- echo "solace is up"

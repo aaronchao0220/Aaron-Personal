@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonAnnotations:
+  app.kubernetes.io/name: usage-telemetry-publisher
+generators:
+  - generators
+transformers:
+  - namespace.yaml

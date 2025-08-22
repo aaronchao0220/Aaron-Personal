@@ -1,0 +1,57 @@
+configs:
+  data:
+    # Load test/local-dev feature flags here since GSK messaging will not work without any FFs.
+    featureFlagsEnabled: false
+    solaceUri: "tcp://usage-telemetry-publisher-solace-pubsubplus-ha:55555"
+    enableSolaceTokenAuth: false
+ciBuild: true
+messaging:
+  enabled: true
+
+solace-pubsubplus-ha:
+  enabled: false
+  solace:
+    redundancy: false
+    systemScaling:
+      maxSpoolUsage: 1500
+      cpu: 500m
+      memory: 6000Mi
+      maxConnections: 100
+      maxQueueMessages: 100
+
+feature-flags-ld-relay:
+  enabled: true
+  configs:
+    data:
+      relayFlagsFilePath: "/qlik/feature-flags-ld-relay/flags.tar.gz"
+      customFlagsFile: "/run/configs/qlik.com/feature-flags-ld-relay/customOverrides.json"
+      relayOfflineMode: true
+      customOverrides: "{{ toJson .Values.customFeatureOverrides }}"
+      ldToken: "key"
+
+  deployment:
+    # set to 1 as there is no need for 3 replicas just to test Helm packaging
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "200M"
+    volumes:
+      configMap:
+        config-volume:
+          configMapName: "{{ .Release.Name }}-feature-flags-ld-relay-configs"
+          items:
+          - key: customOverrides
+            path: customOverrides.json
+
+    container:
+      volumeMounts:
+        config-volume:
+          readOnly: true
+          mountPath: /run/configs/qlik.com/feature-flags-ld-relay
+
+  hpa:
+    # explicitly disable the HPA or we cannot set the number of replicas to 1
+    enabled: false
+
+  customFeatureOverrides: {}

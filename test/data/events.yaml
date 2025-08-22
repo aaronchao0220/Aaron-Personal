@@ -1,0 +1,4 @@
+# for test & local dev
+allowedEvents:
+  - com.qlik.v1.analytics.analytics-app-client.sheet-view.opened
+  - com.qlik.v1.analytics.analytics-app-client.performance.timings

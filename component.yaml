@@ -1,0 +1,35 @@
+componentId: usage-telemetry-publisher
+discussionSlackChannel: '#tds-public'
+botSlackChannel: '#tds-bot'
+owningTeam: telemetry-data-services
+publishedPackages:
+  docker:
+    ids:
+      - usage-telemetry-publisher
+  helm:
+    ids:
+      - usage-telemetry-publisher
+branches:
+  - name: master
+    releaseEnvironments:
+    - environment: qlik-cloud-services-dev
+qlikBuilderPipelineOptions:
+  actionHelmToolsOptions:
+    with:
+      action: package_and_publish
+  intakeVerification: true
+  simpleMakeRelease: true
+production-approval: required
+production-approval/compliance/antivirus: required
+production-approval/compliance/api-governance: not-applicable
+production-approval/compliance/sre-compliance-slo: not-applicable
+production-approval/compliance/twistlock: required
+primaryChampion: FredrikL
+secondaryChampions:
+  - wadje44
+  - aaronchao0220
+domain: qcs-infra
+productsAndDeployments:
+  - sde
+  - qcs-dev
+playbookUrl: https://github.com/qlik-trial/elastic/blob/master/docs/SRE-Partnerships/usage-telemetry-publisher/playbook.md

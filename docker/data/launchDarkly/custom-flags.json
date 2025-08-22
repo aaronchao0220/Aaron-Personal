@@ -1,0 +1,22 @@
+{
+  "global": {
+    "usage-telemetry-event-ingestion": false
+  },
+  "tenant": {
+    "mock-tenant-1": {
+      "usage-telemetry-event-ingestion": false
+    },
+    "mock-tenant-2": {
+      "usage-telemetry-event-ingestion": true
+    },
+    "tenant-id_1": {
+      "TLV_x_USAGE_TELEMETRY_x": true
+    },
+    "tenant-id_3": {
+      "TLV_x_USAGE_TELEMETRY_x": true
+    },
+    "tenant-id_5": {
+      "TLV_x_USAGE_TELEMETRY_x": false
+    }
+  }
+}

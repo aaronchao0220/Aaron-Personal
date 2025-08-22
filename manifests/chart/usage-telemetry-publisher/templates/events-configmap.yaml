@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: usage-telemetry-publisher-events-configmap
+
+data:
+  eventsFile: |
+    ---
+  {{- if .Values.allowedEvents }}
+    allowedEvents:
+  {{- range $event := .Values.allowedEvents }}
+      - {{ $event }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.disallowedEvents }}
+    disallowedEvents:
+  {{- range $event := .Values.disallowedEvents }}
+      - {{ $event }}
+  {{- end }}
+  {{- end }}

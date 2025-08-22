@@ -1,0 +1,50 @@
+{{- template "common.configmap" (list . "usage-telemetry-publisher.configmap") -}}
+{{- define "usage-telemetry-publisher.configmap" -}}
+{{- end }}
+
+---
+{{ template "common.secret" (list . "usage-telemetry-publisher.secret") -}}
+{{- define "usage-telemetry-publisher.secret" -}}
+{{- end }}
+
+---
+{{ template "common.service" (list . "usage-telemetry-publisher.service") -}}
+{{- define "usage-telemetry-publisher.service" -}}
+{{- end }}
+
+---
+{{ template "common.networkpolicy" (list . "usage-telemetry-publisher.networkpolicy") -}}
+{{- define "usage-telemetry-publisher.networkpolicy" -}}
+{{- end }}
+
+---
+{{ template "common.sealedsecret" (list . "usage-telemetry-publisher.sealedsecret") -}}
+{{- define "usage-telemetry-publisher.sealedsecret" -}}
+{{- end }}
+---
+{{ template "common.deployment" (list . "usage-telemetry-publisher.deployment") -}}
+{{- define "usage-telemetry-publisher.deployment" -}}
+{{- end }}
+
+
+# horizontal pod autoscaler
+---
+{{ template "common.hpa" (list . "usage-telemetry-publisher.hpa") -}}
+{{- define "usage-telemetry-publisher.hpa" -}}
+{{- end }}
+
+---
+{{ template "common.keyrequest" (list . "usage-telemetry-publisher.keyrequest") -}}
+{{- define "usage-telemetry-publisher.keyrequest" -}}
+{{- end }}
+
+---
+{{ template "common.keyssecret" (list . "usage-telemetry-publisher.keyssecret") -}}
+{{- define "usage-telemetry-publisher.keyssecret" -}}
+{{- end }}
+
+---
+{{ template "common.ingress" (list . "usage-telemetry-publisher.ingress") -}}
+{{- define "usage-telemetry-publisher.ingress" -}}
+{{- end }}
+---
